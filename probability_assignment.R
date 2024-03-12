@@ -134,6 +134,14 @@ predicted_values <- predict(model, newdata = subset_data_for_predict)
 # Print the summary of the model, to get the accuracy statistics
 summary(model)
 
+# Calculate the RMSE
+squared_diff <- (actual_values - predicted_values)^2
+mean_squared_diff <- mean(squared_diff)
+RMSE <- sqrt(mean_squared_diff)
+
+# Print the RMSE
+print(RMSE)
+
 # Predict 12-month VAS for the remaining 20% of patients
 predicted_values <- predict(model, newdata = test_data)
 
@@ -142,7 +150,7 @@ comparison <- data.frame(Actual = test_data$Vas_12_months, Predicted = predicted
 comparison
 
 # Install and load required packages
-install.packages("ggplot2")
+# install.packages("ggplot2")
 library(ggplot2)
 
 # Assuming 'test_data' is your dataframe and 'predicted_values' is your list of predicted values
