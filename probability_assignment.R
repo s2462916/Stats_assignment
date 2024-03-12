@@ -75,7 +75,8 @@ results_adj <- data.frame(Biomarker = character(),
                           mean_of_y = numeric(),
                           stringsAsFactors = FALSE)
 
-# Perform t-test for each biomarker
+
+# Now perform t-test with Bonferroni corrected significance level
 for (biomarker in biomarkers) {
   cat("Biomarker:", biomarker, "\n")
   
@@ -86,7 +87,7 @@ for (biomarker in biomarkers) {
   # Perform t-test
   t_test_result_adj <- t.test(male_values, female_values, conf.level = 0.9944)
   
-  # Store results in the data frame
+  # Store the adjusted results in the data frame
   results_adj[nrow(results_adj) + 1, ] <- list(
     Biomarker = biomarker,
     t_value = t_test_result_adj$statistic,
@@ -101,14 +102,13 @@ for (biomarker in biomarkers) {
 print(results_adj)
 
 
-# Define new column names
+# Define new column names to remove special characters such as ‘-’
 new_colnames <- c( "PatientID", "Biomarker", "IL_8" , "VEGF_A" , "OPG" , "TGF_beta_1" , "IL_6" , "CXCL9" , "CXCL1" , "IL_18" , "CSF_1" , "Age" , "Sex" , "Smoker" , "VAS_at_inclusion", "Vas_12_months", "Week")
 
 # Assign new column names to the data frame
 colnames(inclusion_data) <- new_colnames
-
-
 # Split the inclusion_data into training and testing sets
+
 set.seed(123) # for reproducibility
 train_indices <- sample(1:nrow(inclusion_data), 0.8 * nrow(inclusion_data))
 train_data <- inclusion_data[train_indices, ]
@@ -123,13 +123,16 @@ parameter_values <- summary(model)$coefficients
 # Print the parameter values table
 print(parameter_values)
 
-# Get the actual values from your dataset
-actual_values <- train_data$Vas_12_months  # Replace 'dataset' with the name of your dataset and 'VAS_at_12months' with the actual column name
+# Get the actual values from the train dataset
+actual_values <- train_data$Vas_12_months
 
 # Use the predict() function to obtain the predicted values
 explanatory_vars <- c("IL_8", "VEGF_A", "OPG", "TGF_beta_1", "IL_6", "CXCL9", "CXCL1", "IL_18", "CSF_1", "Age", "Sex", "Smoker", "VAS_at_inclusion")
 subset_data_for_predict <- train_data[, explanatory_vars]
-predicted_values <- predict(model, newdata = subset_data_for_predict)  # Replace 'model' with the name of your regression model and 'dataset' with the name of your dataset
+predicted_values <- predict(model, newdata = subset_data_for_predict)
+
+# Print the summary of the model, to get the accuracy statistics
+summary(model)
 
 # Predict 12-month VAS for the remaining 20% of patients
 predicted_values <- predict(model, newdata = test_data)
@@ -158,7 +161,9 @@ ggplot(comparison_dataframe, aes(x = PatientID)) +
   theme_minimal() +
   scale_color_manual(name = "Data", values = c("Actual" = "blue", "Predicted" = "red")) +  # Set colors and legend labels
   guides(color = guide_legend(override.aes = list(size = 3))) +  # Adjust legend size
-  theme(legend.position = "top-right")  # Move legend to the top
+  theme(legend.position = "top-right")  # Move legend to top right
+
+# The below code fits the data to different regression models - quadratic, cubic,multiple linear with  log-value of the explanatory variables.
 
 # Fit a quadratic regression model with polynomial terms for each predictor
 quadratic_model <- lm(Vas_12_months ~ I(IL_8^2) + I(VEGF_A^2) + I(OPG^2) + I(TGF_beta_1^2) + I(IL_6^2) + I(CXCL9^2) + I(CXCL1^2) + I(IL_18^2) + I(CSF_1^2) + I(Age^2) + I(Sex^2) + I(Smoker^2) + I(VAS_at_inclusion^2), data = train_data)
